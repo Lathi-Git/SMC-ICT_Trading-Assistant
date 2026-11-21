@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SMC/ICT Trade Assistant</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<style>
+:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:#0f172a;color:#e2e8f0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.card{background:#1e293b;border:1px solid #334155;border-radius:1rem}
+.vbtn{white-space:nowrap}
+.lbl{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;font-weight:600}
+input,select,textarea{background:#0f172a;border:1px solid #334155;border-radius:.6rem;color:#e2e8f0;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#3b82f6}
+</style>
+</head>
+<body>
+<nav class="border-b border-slate-700/60 bg-[#0f172a]/90 sticky top-0 z-20 backdrop-blur">
+ <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-2">
+  <div class="font-semibold text-sm sm:text-base flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-blue-500 grid place-items-center text-xs font-bold">S</span>SMC/ICT Assistant</div>
+  <div class="flex bg-slate-800 rounded-full p-1 text-sm max-w-[68vw] overflow-x-auto">
+   <button data-view="dash" class="vbtn px-3 sm:px-4 py-1 rounded-full transition-all duration-200">Dashboard</button>
+   <button data-view="rules" class="vbtn px-3 sm:px-4 py-1 rounded-full transition-all duration-200">System Rules</button>
+   <button data-view="sim" class="vbtn px-3 sm:px-4 py-1 rounded-full transition-all duration-200">Simulator</button>
+   <button data-view="audit" class="vbtn px-3 sm:px-4 py-1 rounded-full transition-all duration-200">Audit</button>
+   <button data-view="crypto" class="vbtn px-3 sm:px-4 py-1 rounded-full transition-all duration-200">Crypto</button>
+  </div>
+  <div class="text-xs text-slate-400 hidden sm:block">Trader &middot; <button class="hover:text-slate-200 transition-all duration-200" onclick="toast('Local-only app: nothing to sign out of')">Sign out</button></div>
+ </div>
+</nav>
+
+<main class="max-w-6xl mx-auto px-4 py-6">
+<section id="dash">
+ <header class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+  <div>
+   <div class="lbl">Pre-trade dashboard &middot; New York session</div>
+   <h1 class="text-2xl sm:text-3xl font-bold mt-1">SMC/ICT Trade Assistant</h1>
+   <p class="text-slate-400 text-sm mt-1">Take your time. Check your setup. Chart on the left, system on the right&hellip;</p>
+  </div>
+  <div class="flex items-center gap-3">
+   <div class="w-48">
+    <div class="flex justify-between lbl mb-1"><span>Confirmed</span><span id="cnt" class="text-slate-200">0 / 13</span></div>
+    <div class="h-2 bg-slate-700 rounded-full overflow-hidden"><div id="bar" class="h-full bg-blue-500 transition-all duration-300" style="width:0%"></div></div>
+   </div>
+   <button id="clear" class="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border border-slate-600 hover:border-red-400 hover:text-red-300 transition-all duration-200">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>Clear</button>
+  </div>
+ </header>
+
+ <div class="grid lg:grid-cols-5 gap-6">
+  <div class="lg:col-span-3 space-y-6">
+   <div class="card p-5">
+    <div class="flex items-center justify-between mb-3"><h2 class="font-semibold">Analysis canvas</h2>
+     <button id="addmore" class="hidden text-xs px-3 py-1 rounded-lg bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-all duration-200">Add more</button></div>
+    <div id="drop" class="border-2 border-dashed border-slate-600 rounded-xl p-4 min-h-[180px] flex items-center justify-center text-center cursor-pointer hover:border-blue-500 transition-all duration-200">
+     <p id="droptxt" class="text-slate-400 text-sm">Drop screenshots, PDFs, docs or any files or click to browse</p>
+     <div id="thumbs" class="hidden w-full grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+    </div>
+    <input id="file" type="file" multiple class="hidden">
+   </div>
+
+   <div class="card p-5">
+    <div class="flex items-center justify-between mb-3"><h2 class="font-semibold">Trade setup notes &amp; confluences</h2>
+     <span id="saved" class="opacity-0 transition-opacity duration-300 text-[10px] font-bold tracking-wider px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400">AUTO-SAVED</span></div>
+    <textarea id="notes" rows="5" class="w-full p-3 text-sm" placeholder="PSY level touched, POI / FVG, volume profile POC..."></textarea>
+   </div>
+
+   <div class="card p-5">
+    <h2 class="font-semibold mb-3">System discipline</h2>
+    <div id="tabs" class="flex flex-wrap gap-2 mb-4"></div>
+    <div id="items" class="space-y-2"></div>
+   </div>
+  </div>
+
+  <div class="lg:col-span-2 space-y-6">
+   <div class="card p-5">
+    <h2 class="font-semibold mb-4">Position sizing</h2>
+    <label class="lbl">Live account balance (ZAR)</label>
+    <div class="relative mt-1 mb-3"><span class="absolute left-3 top-2 text-slate-400">R</span>
+     <input id="bal" type="number" min="0" step="0.01" placeholder="0.00" class="w-full pl-7 pr-3 py-2"></div>
+    <label class="lbl">Instrument</label>
+    <select id="pair" class="w-full mt-1 mb-4 px-3 py-2"></select>
+    <div class="rounded-xl bg-[#0f172a] border border-slate-700 p-4 text-center">
+     <div class="lbl">Allowed lot size</div>
+     <div id="lot" class="text-4xl font-bold text-blue-400 my-1">0.00</div>
+     <div id="lotnote" class="text-xs text-slate-400 min-h-[1rem]"></div>
+    </div>
+    <div class="grid grid-cols-2 gap-3 mt-3 text-center">
+     <div class="rounded-lg bg-red-500/10 border border-red-500/30 p-2"><div class="lbl text-red-300">Loss at SL</div><div id="loss" class="font-semibold">R0.00</div></div>
+     <div class="rounded-lg bg-emerald-500/10 border border-emerald-500/30 p-2"><div class="lbl text-emerald-300">Profit at min TP</div><div id="profit" class="font-semibold">R0.00</div></div>
+    </div>
+    <p id="acct" class="text-[11px] text-slate-500 mt-3"></p>
+    <div class="mt-4 space-y-2 text-sm">
+     <div class="rounded-lg border-l-4 border-red-400 bg-slate-900/60 p-3"><div class="lbl">Stop loss cap</div>Max 5 pips / adjacent Fib level (50 pips BTCUSD)</div>
+     <div class="rounded-lg border-l-4 border-emerald-400 bg-slate-900/60 p-3"><div class="lbl">Take profit</div>Min 15 pips, -61.8% to -200% Fib (150 pips BTCUSD)</div>
+     <div class="rounded-lg border-l-4 border-blue-400 bg-slate-900/60 p-3"><div class="lbl">Breakeven trigger</div>0.0% Fib break &rarr; SL to entry</div>
+    </div>
+   </div>
+   <div class='card p-5' id='ema15mCard'></div>
+   <div class="card p-5" id="coach">
+    <div class="flex items-center justify-between mb-1"><h2 class="font-semibold">System coach</h2><span class="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded bg-blue-500/15 text-blue-400">AI</span></div>
+    <p id="coachoff" class="hidden text-sm text-slate-400">The AI coach only runs when this page is opened from its claude.ai link. It isn’t available in a downloaded copy.</p>
+    <div id="coachon" class="hidden">
+     <p class="text-xs text-slate-400 mb-3">Ask about your screenshots, notes and checklist. It answers strictly from your system rules.</p>
+     <div class="flex flex-wrap gap-2 mb-3" id="quick">
+      <button data-q="Give me the full summary of this setup: bias, what is not covered from the checklist, and what should happen next." class="text-xs px-2.5 py-1 rounded-full bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-all duration-200">Full summary</button>
+      <button data-q="Review my current setup against the system. Look at my screenshots and notes and tell me which checklist items are supported, which are missing, and what to double-check." class="text-xs px-2.5 py-1 rounded-full bg-slate-700/60 hover:bg-slate-700 transition-all duration-200">Review my setup</button>
+      <button data-q="Using the golden-period entry rules, is this a valid 61.8% entry? Which confluences are present and which are missing?" class="text-xs px-2.5 py-1 rounded-full bg-slate-700/60 hover:bg-slate-700 transition-all duration-200">Valid entry?</button>
+      <button data-q="Given my balance and instrument, walk me through lot size, stop loss, take profit and breakeven." class="text-xs px-2.5 py-1 rounded-full bg-slate-700/60 hover:bg-slate-700 transition-all duration-200">Size this trade</button>
+     </div>
+     <div id="msgs" class="space-y-2 max-h-80 overflow-y-auto mb-3"></div>
+     <label id="inclwrap" class="flex items-center gap-2 text-xs text-slate-400 mb-2"><input id="incl" type="checkbox" checked class="accent-blue-500"> Include my screenshots (images only)</label>
+     <div class="flex gap-2"><input id="q" type="text" placeholder="Ask about this setup..." class="flex-1 px-3 py-2 text-sm min-w-0">
+      <button id="send" class="px-3 py-2 rounded-lg bg-blue-600 text-sm font-medium hover:bg-blue-500 transition-all duration-200">Send</button>
+      <button id="stop" class="hidden px-3 py-2 rounded-lg border border-slate-600 text-sm">Stop</button></div>
+    </div>
+   </div>
+  </div>
+ </div>
+</section>
+
+<section id="rules" class="hidden max-w-3xl mx-auto space-y-5">
+ <div><h1 class="text-2xl sm:text-3xl font-bold">System Rules &amp; Ratios</h1>
+  <p class="text-slate-400 text-sm mt-1">The fixed logic behind every checklist item. Nothing here is discretionary&hellip;</p></div>
+ <div class="card p-5"><h3 class="font-semibold mb-2">Instruments &amp; priority</h3><ul class="text-sm text-slate-300 space-y-1 list-disc pl-5">
+  <li>DXY first: analysed for dollar bias.</li>
+  <li><b>1st priority:</b> XAUUSD, GBPUSD, EURUSD &mdash; analysed if news events support the currencies.</li>
+  <li><b>2nd priority:</b> USDCHF, USDCAD, USDJPY &mdash; only when news for those currencies is present that day, 9:00&ndash;17:00 SAST.</li>
+  <li><b>Indices:</b> US30, US100, S&amp;P500 &mdash; at high-volume equity session opens.</li>
+  <li><b>Crypto (weekend):</b> BTCUSD &mdash; only traded if balance exceeds R100.</li></ul></div>
+ <div class="card p-5"><h3 class="font-semibold mb-2">Risk &amp; scaling</h3><ul class="text-sm text-slate-300 space-y-1 list-disc pl-5">
+  <li>Base margin: 0.01 lots for every R50 of balance. Under R50 = 0.01; R50&ndash;R100 = 0.02; continues in R50 intervals.</li>
+  <li>Stop loss cap: max 5 pips on standard FX, 50 pips on BTCUSD, at the adjacent Fib level.</li>
+  <li>Take profit: min 15 pips (150 on BTCUSD), between the -61.8% and -200% expansion.</li>
+  <li>Breakeven: a break of 0.0% Fib moves SL to entry immediately.</li></ul></div>
+ <div class="card p-5"><h3 class="font-semibold mb-2">15-minute HTF alignment</h3><ul class="text-sm text-slate-300 space-y-1 list-disc pl-5">
+  <li>Mark 00:00 Monday external high/low. Read structure on the line chart.</li>
+  <li>Plot 15m PSY levels: 0.1000, 0.0750, 0.0500, 0.0250, 0.0000.</li>
+  <li>Trend is valid only when the 50 SMA passes through the price body leading to the BOS, not just a wick.</li>
+  <li>Align FVG/OB with the SMA passthrough and PSY levels.</li></ul></div>
+ <div class="card p-5"><h3 class="font-semibold mb-2">1-minute LTF execution</h3><ul class="text-sm text-slate-300 space-y-1 list-disc pl-5">
+  <li>Entry gaps run hourly 07:00&ndash;18:00 SAST. First 15 minutes: LTF confirmation.</li>
+  <li>Golden period: 15&ndash;30 minutes past the hour.</li>
+  <li>Entry at 61.8% Fib overlapping the volume profile POC, a valid POI and a 1m PSY level (0.0875, 0.0625, 0.0375, 0.0125).</li></ul></div>
+ <div class="card p-5"><h3 class="font-semibold mb-3">Fibonacci expansion map (buy)</h3>
+  <div class="font-mono text-sm space-y-1.5">
+   <div class="flex justify-between rounded bg-emerald-500/10 px-3 py-1.5"><span>-200%</span><span>Take profit ceiling</span></div>
+   <div class="flex justify-between rounded bg-emerald-500/10 px-3 py-1.5"><span>-61.8%</span><span>Take profit floor</span></div>
+   <div class="flex justify-between rounded bg-blue-500/10 px-3 py-1.5"><span>0%</span><span>Breakeven trigger</span></div>
+   <div class="flex justify-between rounded bg-blue-500/20 px-3 py-1.5"><span>61.8%</span><span>Entry</span></div>
+   <div class="flex justify-between rounded bg-red-500/10 px-3 py-1.5"><span>78.6%</span><span>Stop loss</span></div></div></div>
+ <div class="card p-5"><h3 class="font-semibold mb-2">EMA/SMA &amp; 15m candle close confirmation</h3><ul class="text-sm text-slate-300 space-y-1 list-disc pl-5">
+  <li>Price must be at an Entry Gap (07:00&ndash;18:00 SAST) and have interacted with a PSY level; an interaction with the 50 EMA is then expected.</li>
+  <li>50 EMA = thick red, 50 SMA = thin red, 200 SMA = blue. Bearish stack: 200 SMA &gt; 50 SMA &gt; 50 EMA. Bullish stack: 50 EMA &gt; 50 SMA &gt; 200 SMA.</li>
+  <li>Read the candle that touches or breaks the 50 EMA: bullish or bearish, and its intent (momentum, structure bias, MA formation, confluences).</li>
+  <li>Confirm Entry Gap and Golden Zone (61.8% + POC + POI + SMA/EMA zone + PSY), then trade at the POI.</li>
+  <li>Always confirm the candle with the Candlestick Pattern Document, and validate the 15m candle close (15m chart, during the Entry Gap or Golden Zone) against it.</li></ul></div>
+ <div class="card p-5"><h3 class="font-semibold mb-2">BTCUSD / crypto module</h3><ul class="text-sm text-slate-300 space-y-1 list-disc pl-5">
+  <li>Weekends or high volatility only, and only when balance exceeds R100.</li>
+  <li>Max SL 50 pips at 78.6% Fib, min TP 150 pips between -61.8% and -200% Fib, breakeven on the 0.0% Fib break.</li>
+  <li>Check USDT.D (Tether Dominance) as inverse context and flag divergence.</li></ul></div>
+ <div class="card p-5 overflow-x-auto"><h3 class="font-semibold mb-1">Per-pair ratios (RCG Classic, 1:2000)</h3>
+  <p class="text-xs text-slate-400 mb-3">Percentages are of the margin for 0.01 lots. Reference lots are what R30 buys (R100 for BTCUSD).</p>
+  <table class="w-full text-xs sm:text-sm text-left"><thead class="text-slate-400"><tr><th class="py-1">Pair</th><th>0.01 margin</th><th>SL 5p</th><th>TP 15p</th><th>Ref lots</th></tr></thead><tbody id="ratios"></tbody></table></div>
+</section>
+
+<section id='sim' class='hidden max-w-3xl mx-auto space-y-5'>
+ <div><h1 class='text-2xl sm:text-3xl font-bold'>Compounding simulator</h1><p class='text-slate-400 text-sm mt-1'>Consecutive winning trades at the minimum take profit, with tiered lot scaling.</p></div>
+ <div class='card p-5 grid sm:grid-cols-3 gap-3'>
+  <div><label class='lbl'>Start balance (R)</label><input id='sb' type='number' min='0' value='50' class='w-full mt-1 px-3 py-2'></div>
+  <div><label class='lbl'>Instrument</label><select id='sp' class='w-full mt-1 px-3 py-2'></select></div>
+  <div><label class='lbl'>Target balance (R)</label><input id='st' type='number' min='0' value='500' class='w-full mt-1 px-3 py-2'></div>
+ </div>
+ <div id='simout' class='card p-5 text-sm'></div>
+ <div class='card p-5'><h3 class='font-semibold mb-2'>Ask the calculator</h3><div class='flex gap-2'><input id='simq' type='text' placeholder='e.g. How many GBPUSD wins to reach R1000?' class='flex-1 px-3 py-2 text-sm min-w-0'><button id='simask' class='px-3 py-2 rounded-lg bg-blue-600 text-sm font-medium hover:bg-blue-500 transition-all duration-200'>Ask</button></div><div id='simans' class='whitespace-pre-wrap text-sm mt-3 text-slate-300'></div></div>
+</section>
+
+<section id='audit' class='hidden max-w-4xl mx-auto space-y-5'>
+ <div><h1 class='text-2xl sm:text-3xl font-bold'>System audit &amp; journal</h1><p class='text-slate-400 text-sm mt-1'>Checks your charts against every gate and matches them to your journal history.</p></div>
+ <div class='card p-5'>
+  <div class='lbl mb-2'>Charts (from the Dashboard canvas)</div><div id='aimgs' class='flex flex-wrap gap-2 mb-3'></div>
+  <textarea id='anotes' rows='3' class='w-full p-3 text-sm' placeholder='Paste external Trading Assistant feedback (optional)...'></textarea>
+  <div class='flex gap-2 mt-3'><button id='runaudit' class='px-4 py-2 rounded-lg bg-blue-600 text-sm font-medium hover:bg-blue-500 transition-all duration-200 disabled:opacity-50'>Run System Audit</button><button id='asave' class='hidden px-4 py-2 rounded-lg border border-emerald-500/50 text-emerald-300 text-sm'>Save to Journal</button></div>
+  <div id='aout' class='whitespace-pre-wrap text-sm mt-4 text-slate-200'></div>
+ </div>
+ <div class='card p-5'><div class='flex flex-wrap items-center justify-between gap-2 mb-3'><h3 class='font-semibold'>Trading journal</h3><div class='flex gap-2 text-xs'><button id='jexp' class='px-3 py-1 rounded-lg border border-slate-600'>Export JSON</button><button id='jimp' class='px-3 py-1 rounded-lg border border-slate-600'>Import JSON</button></div></div><textarea id='jbox' rows='4' class='hidden w-full p-2 text-xs mb-3' placeholder='Backup JSON appears here. Paste a backup and press Import.'></textarea><div id='jlist'></div></div>
+</section>
+
+<section id='crypto' class='hidden'>
+ <header class='flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6'>
+  <div><div class='lbl'>Crypto &amp; BTCUSD workspace &middot; weekend &amp; high-volatility engine</div>
+  <h1 class='text-2xl sm:text-3xl font-bold mt-1'>BTCUSD &amp; Crypto Trade Assistant</h1>
+  <p class='text-slate-400 text-sm mt-1'>Bitcoin chart canvas, USDT.D and market context notes, BTCUSD rules, and EMA/SMA + 15m candle close verification.</p></div>
+  <div id='cgate' class='rounded-xl px-4 py-2 text-sm font-semibold'></div>
+ </header>
+ <div class='grid lg:grid-cols-5 gap-6'>
+  <div class='lg:col-span-3 space-y-6'>
+   <div class='card p-5'><div class='flex items-center justify-between mb-3'><h2 class='font-semibold'>BTCUSD canvas</h2><button id='caddmore' class='hidden text-xs px-3 py-1 rounded-lg bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-all duration-200'>Add more</button></div>
+    <div id='cdrop' class='border-2 border-dashed border-slate-600 rounded-xl p-4 min-h-[160px] flex items-center justify-center text-center cursor-pointer hover:border-blue-500 transition-all duration-200'><p id='cdroptxt' class='text-slate-400 text-sm'>Drop BTCUSD charts, USDT.D screenshots or candlestick pattern documents, or click to browse</p><div id='cthumbs' class='hidden w-full grid grid-cols-2 sm:grid-cols-3 gap-3'></div></div>
+    <input id='cfile' type='file' multiple accept='image/*,.pdf,.doc,.docx,.txt,.md,.json' class='hidden'>
+    <p id='cctx' class='text-xs text-slate-400 mt-3'></p></div>
+   <div class='card p-5'><div class='flex items-center justify-between mb-3'><h2 class='font-semibold'>BTCUSD &amp; crypto context notes</h2><span id='csaved' class='opacity-0 transition-opacity duration-300 text-[10px] font-bold tracking-wider px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400'>AUTO-SAVED</span></div>
+    <textarea id='cnotes' rows='6' class='w-full p-3 text-sm' placeholder='HTF structure and Monday 00:00 SAST range, USDT.D vs BTCUSD, Entry Gap / Golden Period notes, pasted candlestick pattern rules...'></textarea></div>
+   <div class='card p-5' id='cMA'></div>
+  </div>
+  <div class='lg:col-span-2 space-y-6'>
+   <div class='card p-5'><h2 class='font-semibold mb-4'>BTCUSD position &amp; risk</h2>
+    <label class='lbl'>Live account balance (ZAR)</label><div class='relative mt-1 mb-3'><span class='absolute left-3 top-2 text-slate-400'>R</span><input id='cbal' type='number' min='0' step='0.01' placeholder='0.00' class='w-full pl-7 pr-3 py-2'></div>
+    <label class='lbl'>Instrument</label><select id='cpair' class='w-full mt-1 mb-4 px-3 py-2'><option>BTCUSD</option></select>
+    <div class='rounded-xl bg-[#0f172a] border border-slate-700 p-4 text-center'><div class='lbl'>Allowed BTCUSD lot size</div><div id='clot' class='text-4xl font-bold text-blue-400 my-1'>0.00</div><div id='cnote' class='text-xs text-amber-400 min-h-[1rem]'></div></div>
+    <div class='grid grid-cols-2 gap-3 mt-3 text-center'><div class='rounded-lg bg-red-500/10 border border-red-500/30 p-2'><div class='lbl text-red-300'>Loss at 50-pip SL</div><div id='closs' class='font-semibold'>R0.00</div></div><div class='rounded-lg bg-emerald-500/10 border border-emerald-500/30 p-2'><div class='lbl text-emerald-300'>Profit at 150-pip TP</div><div id='cprofit' class='font-semibold'>R0.00</div></div></div>
+    <div class='mt-4 space-y-2 text-sm'>
+     <div class='rounded-lg border-l-4 border-amber-400 bg-slate-900/60 p-3'><div class='lbl'>RCG Classic 1:2000</div>Margin R29.07 per 0.01 lot (ref 0.02 lot at R100). Balance must exceed R100.</div>
+     <div class='rounded-lg border-l-4 border-red-400 bg-slate-900/60 p-3'><div class='lbl'>Stop loss</div>Max 50 pips (28.64% of margin, R16.61 at R100 base), at 78.6% Fib</div>
+     <div class='rounded-lg border-l-4 border-emerald-400 bg-slate-900/60 p-3'><div class='lbl'>Take profit</div>Min 150 pips (85.92%, R49.83 at R100 base), -61.8% to -200% Fib</div>
+     <div class='rounded-lg border-l-4 border-blue-400 bg-slate-900/60 p-3'><div class='lbl'>Breakeven trigger</div>0.0% Fib break &rarr; SL to entry</div></div></div>
+   <div class='card p-5'><div class='flex items-center justify-between mb-1'><h2 class='font-semibold'>Crypto system coach</h2><span class='text-[10px] font-bold tracking-wider px-2 py-0.5 rounded bg-blue-500/15 text-blue-400'>AI</span></div>
+    <p class='text-xs text-slate-400 mb-3'>Runs from the claude.ai link only. Uses your BTCUSD charts, notes and the confirmation card.</p>
+    <div class='flex flex-wrap gap-2 mb-3' id='cquick'>
+     <button data-q='Give me a full BTCUSD setup audit against the system, ending with the summary.' class='text-xs px-2.5 py-1 rounded-full bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-all duration-200'>BTCUSD setup audit</button>
+     <button data-q='Run the EMA/SMA and 15m candle close check on my BTCUSD charts: candle type and intent, stack, Entry Gap and Golden Zone, candlestick document verdict.' class='text-xs px-2.5 py-1 rounded-full bg-slate-700/60 hover:bg-slate-700 transition-all duration-200'>EMA/SMA + 15m close check</button>
+     <button data-q='Is USDT.D aligned with or diverging from BTCUSD in my notes and charts, and what does that mean for bias?' class='text-xs px-2.5 py-1 rounded-full bg-slate-700/60 hover:bg-slate-700 transition-all duration-200'>USDT.D vs BTCUSD</button>
+     <button data-q='Check my balance against the R100 BTCUSD gate and walk me through lot size, 50-pip SL, 150-pip TP and breakeven.' class='text-xs px-2.5 py-1 rounded-full bg-slate-700/60 hover:bg-slate-700 transition-all duration-200'>Risk &amp; R100 check</button></div>
+    <div id='cmsgs' class='space-y-2 max-h-80 overflow-y-auto mb-3'></div>
+    <div class='flex gap-2'><input id='cq' type='text' placeholder='Ask about BTCUSD...' class='flex-1 px-3 py-2 text-sm min-w-0'><button id='csend' class='px-3 py-2 rounded-lg bg-blue-600 text-sm font-medium hover:bg-blue-500 transition-all duration-200'>Send</button></div></div>
+  </div>
+ </div>
+</section>
+</main>
+
+<button id='fab' aria-label='Open assistant' title='System assistant' class='fixed z-40 right-5 w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-900/50 grid place-items-center hover:scale-105 active:scale-95 transition-all duration-200' style='bottom:calc(1.25rem + env(safe-area-inset-bottom,0px))'>
+ <svg width='26' height='26' viewBox='0 0 24 24' fill='#fff'><path d='M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8z'/><path d='M19 14l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9z' opacity='.8'/></svg></button>
+<div id='fpanel' class='hidden fixed z-40 right-3 sm:right-5 flex flex-col card shadow-2xl' style='bottom:calc(5.5rem + env(safe-area-inset-bottom,0px));width:min(26rem,calc(100vw - 1.5rem));height:min(36rem,calc(100vh - 8rem))'>
+ <div class='flex items-center justify-between px-4 py-3 border-b border-slate-700'>
+  <div class='flex items-center gap-2'><span class='font-semibold text-sm'>System assistant</span><span id='fmode' class='hidden text-[10px] font-bold px-2 py-0.5 rounded bg-purple-500/20 text-purple-300'>SOCRATIC</span></div>
+  <div class='flex items-center gap-1 text-xs'><button id='flibbtn' class='px-2 py-1 rounded-lg hover:bg-slate-700/60 transition-all duration-200'>Library (0)</button><button id='fnew' class='px-2 py-1 rounded-lg hover:bg-slate-700/60 transition-all duration-200'>New</button><button id='fclose' aria-label='Close' class='px-2 py-1 rounded-lg hover:bg-slate-700/60 text-base leading-none'>&times;</button></div></div>
+ <div id='flib' class='hidden max-h-40 overflow-y-auto px-4 py-2 border-b border-slate-700 text-xs'></div>
+ <div id='fmsgs' class='flex-1 overflow-y-auto p-4 space-y-3'></div>
+ <div id='fchips' class='flex gap-2 overflow-x-auto px-4 pb-2 pt-1'></div>
+ <label class='px-4 pb-1 flex items-center gap-2 text-[11px] text-slate-400'><input id='fincl' type='checkbox' checked class='accent-blue-500'> Include my screenshots</label>
+ <div class='flex items-center gap-2 px-3 pb-3'>
+  <button id='fattach' title='Attach PDF, Word, text or images' aria-label='Attach files' class='shrink-0 w-9 h-9 rounded-lg border border-slate-600 hover:border-blue-500 grid place-items-center transition-all duration-200'><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M21 11l-8.5 8.5a5 5 0 01-7-7L14 4a3.5 3.5 0 015 5l-8.5 8.5a2 2 0 01-3-3L15 7'/></svg></button>
+  <input id='ffile' type='file' multiple class='hidden'>
+  <input id='fq' type='text' placeholder='Ask, or drop files here...' class='flex-1 min-w-0 px-3 py-2 text-sm'>
+  <button id='fsend' class='px-3 py-2 rounded-lg bg-blue-600 text-sm font-medium hover:bg-blue-500 transition-all duration-200'>Send</button>
+  <button id='fstop' class='hidden px-3 py-2 rounded-lg border border-slate-600 text-sm'>Stop</button></div>
+</div>
+<div id="modal" class="hidden fixed inset-0 z-30 bg-black/60 grid place-items-center p-4">
+ <div class="card p-6 max-w-sm w-full"><h3 class="font-semibold mb-1">Clear everything?</h3>
+  <p class="text-sm text-slate-400 mb-4">This wipes your screenshots, notes, balance and checklist. It can&rsquo;t be undone.</p>
+  <div class="flex justify-end gap-2"><button id="no" class="px-3 py-1.5 rounded-lg border border-slate-600 text-sm">Cancel</button>
+  <button id="yes" class="px-3 py-1.5 rounded-lg bg-red-500 text-sm font-medium">Clear all</button></div></div>
+</div>
+<div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-700 text-sm px-4 py-2 rounded-lg opacity-0 transition-opacity duration-300 pointer-events-none"></div>
+
+<script>
+// ---------- DATA ----------
+const CATS=["15-Minute HTF Alignment","1-Minute LTF Execution","Risk & Trade Management"];
+const ITEMS=[
+["Establish Weekly Range","Mark 00:00 Monday external high/low boundaries",0],
+["Map Market Structure (Line Chart)","Identify impulses, corrections, BOS, and CHoCH",0],
+["Plot 15m PSY Levels","0.1000, 0.0750, 0.0500, 0.0250, 0.0000",0],
+["Validate 50-Period SMA","Must pass through price body leading to BOS, not just a wick",0],
+["Stack POI Confluences","Align FVG/OB with SMA passthrough and PSY levels",0],
+["Wait for Hourly Entry Gap","First 15 mins of the hour for LTF confirmation",1],
+["Measure Consolidation & Liquidity Sweep","Use volume profile; wait for high/low induction and opposite BOS",1],
+["Draw Fibonacci on Impulse","Measure the impulse that created the LTF BOS",1],
+["Identify Golden Period Entry","61.8% Fib overlapping POC, valid POI, and 1m PSY level (0.0875, etc.)",1],
+["Verify Margin & Lot Size","Scale dynamically (e.g., 0.01 lot per R50 balance)",2],
+["Set Defensive Stop Loss","Adjacent Fib level (max 5 pips FX, 50 pips BTC)",2],
+["Set Take Profit Target","Between -61.8% and -200% Fib expansion at major POI/PSY",2],
+["Plan Breakeven Trigger","Move SL to entry immediately when price breaks 0.0% Fib",2]
+].map((a,i)=>({id:String(i+1),label:a[0],sub:a[1],cat:a[2]}));
+// m = margin for 0.01 lots (R); sl/tp = % of that margin; ref = lots bought by refBal (PDF)
+const PAIRS={
+XAUUSD:{m:3.33,sl:258,tp:774,ref:.01,bal:30},GBPUSD:{m:1.11,sl:80.45,tp:241.34,ref:.08,bal:30},
+EURUSD:{m:.93,sl:122.18,tp:366.55,ref:.06,bal:30},USDCAD:{m:.83,sl:86.74,tp:260.22,ref:.10,bal:30},
+USDCHF:{m:.83,sl:144.58,tp:433.74,ref:.06,bal:30},AUDUSD:{m:.58,sl:165.79,tp:497.36,ref:.08,bal:30},
+NZDUSD:{m:.47,sl:140.42,tp:421.26,ref:.12,bal:30},USDJPY:{m:.83,sl:63.25,tp:189.76,ref:.10,bal:30},US30:{m:4.08,sl:20.34,tp:61.03,ref:.01,bal:30},US100:{m:2.24,sl:37.05,tp:111.16,ref:.02,bal:30},"S&P500":{m:.59,sl:70.34,tp:211.02,ref:.08,bal:30},BTCUSD:{m:29.07,sl:28.64,tp:85.92,ref:.02,bal:100}};
+
+// ---------- STATE ----------
+const KEY="smc-ict-assistant-v1",MAXF=2.5*1024*1024;
+const fresh=()=>({checked:{},notes:"",bal:"",pair:"XAUUSD",files:[],tab:0,cryptoFiles:[],cryptoNotes:"",ma:{c:{},v:{},n:""}});
+let S=fresh();
+const $=id=>document.getElementById(id);
+function load(){try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(fresh(),JSON.parse(r));}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));return true}catch(e){toast("Storage full: remove a file to keep saving");return false}}
+let tt;function toast(m){const t=$("toast");t.textContent=m;t.style.opacity=1;clearTimeout(tt);tt=setTimeout(()=>t.style.opacity=0,2400)}
+
+// ---------- CALCULATORS ----------
+const fmt=n=>"R"+n.toFixed(2);
+function calc(){
+ const b=parseFloat(S.bal)||0,p=PAIRS[S.pair];
+ let lots=0,note="";
+ if(S.pair==="BTCUSD"&&b<=100){note="BTCUSD is only traded if balance exceeds R100"}
+ else if(b>0){lots=Math.max(.01,Math.floor(p.ref*(b/p.bal)*100+1e-9)/100)}
+ const k=lots/.01;
+ return{lots,note,loss:k*p.m*p.sl/100,profit:k*p.m*p.tp/100,acct:(Math.floor(b/50)+1)/100};
+}
+
+// ---------- RENDERERS ----------
+function renderProgress(){const n=ITEMS.filter(i=>S.checked[i.id]).length;
+ $("cnt").textContent=n+" / 13";$("bar").style.width=(n/13*100)+"%"}
+function renderTabs(){
+ $("tabs").innerHTML=CATS.map((c,i)=>{const t=ITEMS.filter(x=>x.cat===i),d=t.filter(x=>S.checked[x.id]).length;
+  const on=S.tab===i;
+  return `<button data-tab="${i}" class="text-sm px-3 py-1.5 rounded-full transition-all duration-200 ${on?"bg-blue-600/20 text-blue-400":"text-slate-400 hover:bg-slate-700/60"}">${c} <span class="opacity-70 ml-1">${d}/${t.length}</span></button>`}).join("")}
+function renderItems(){
+ $("items").innerHTML=ITEMS.filter(i=>i.cat===S.tab).map(i=>{const on=!!S.checked[i.id];
+  return `<div data-id="${i.id}" class="flex gap-3 p-3 rounded-xl bg-slate-900/50 hover:bg-slate-900 cursor-pointer transition-all duration-200 ${on?"opacity-60":""}">
+  <div class="mt-0.5 w-5 h-5 shrink-0 rounded-md border-2 grid place-items-center transition-all duration-200 ${on?"bg-blue-500 border-blue-500":"border-slate-500"}">
+  ${on?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 12l5 5 9-10"/></svg>':""}</div>
+  <div><div class="font-semibold text-sm">${i.label}</div><div class="text-xs text-slate-400 mt-0.5">${i.sub}</div></div></div>`}).join("")}
+function renderFiles(){
+ const f=S.files,t=$("thumbs");
+ $("droptxt").classList.toggle("hidden",f.length>0);t.classList.toggle("hidden",!f.length);$("addmore").classList.toggle("hidden",!f.length);
+ t.innerHTML=f.map((x,i)=>`<div class="relative group rounded-lg overflow-hidden bg-slate-900 border border-slate-700 aspect-video grid place-items-center">
+  ${x.type.startsWith("image/")?`<img src="${x.data}" alt="" class="w-full h-full object-cover">`:`<div class="text-xs text-slate-300 p-2 break-all">&#128196; ${esc(x.name)}</div>`}
+  <button data-rm="${i}" class="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 text-xs opacity-0 group-hover:opacity-100 transition-all duration-200" aria-label="Remove">&times;</button></div>`).join("")}
+const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function renderCalc(){
+ const r=calc();$("lot").textContent=r.lots.toFixed(2);$("lotnote").textContent=r.note;
+ $("loss").textContent=fmt(r.loss);$("profit").textContent=fmt(r.profit);
+ $("acct").textContent=(parseFloat(S.bal)>0)?"Account-interval rule (0.01 per R50 step): "+r.acct.toFixed(2)+" lots":""}
+function renderView(v){
+ ["dash","rules","sim","audit","crypto"].forEach(x=>$(x).classList.toggle("hidden",v!==x));VIEW=v;if(v==="crypto")renderCrypto();if(v==="audit")renderAudit();if(v==="sim"){if(!$("sb").dataset.t&&S.bal)$("sb").value=S.bal;runSim()}
+ document.querySelectorAll(".vbtn").forEach(b=>b.className="vbtn px-3 sm:px-4 py-1 rounded-full transition-all duration-200 "+(b.dataset.view===v?"bg-blue-600 text-white":"text-slate-400 hover:text-slate-200"));
+ scrollTo(0,0)}
+function renderAll(){
+ $("notes").value=S.notes;$("bal").value=S.bal;$("pair").value=S.pair;
+ renderProgress();renderTabs();renderItems();renderFiles();renderCalc();renderMA();if(VIEW==="crypto")renderCrypto()}
+
+// ---------- FILES ----------
+function addFiles(list){
+ [...list].forEach(f=>{
+  if(f.size>MAXF){toast(f.name+" is over 2.5 MB, skipped");return}
+  if(!f.type.startsWith("image/"))ingest(f);
+  const r=new FileReader();
+  r.onload=()=>{S.files.push({name:f.name,type:f.type||"file",data:r.result});
+   if(!save()){S.files.pop()}renderFiles()};
+  r.readAsDataURL(f)})}
+
+// ---------- EVENTS ----------
+function init(){
+ load();
+ $("pair").innerHTML=Object.keys(PAIRS).map(k=>`<option>${k}</option>`).join("");
+ $("ratios").innerHTML=Object.entries(PAIRS).map(([k,p])=>`<tr class="border-t border-slate-700"><td class="py-1.5 font-medium">${k}</td><td>R${p.m.toFixed(2)}</td><td>${p.sl}%</td><td>${p.tp}%</td><td>${p.ref.toFixed(2)} @ R${p.bal}</td></tr>`).join("");
+ renderAll();renderView("dash");
+ document.querySelectorAll(".vbtn").forEach(b=>b.onclick=()=>renderView(b.dataset.view));
+ $("tabs").onclick=e=>{const b=e.target.closest("[data-tab]");if(!b)return;S.tab=+b.dataset.tab;save();renderTabs();renderItems()};
+ $("items").onclick=e=>{const r=e.target.closest("[data-id]");if(!r)return;S.checked[r.dataset.id]=!S.checked[r.dataset.id];save();renderProgress();renderTabs();renderItems()};
+ let nt;$("notes").oninput=e=>{S.notes=e.target.value;clearTimeout(nt);nt=setTimeout(()=>{save();const s=$("saved");s.style.opacity=1;setTimeout(()=>s.style.opacity=0,1400)},600)};
+ $("bal").oninput=e=>{S.bal=e.target.value;save();renderCalc()};
+ $("pair").onchange=e=>{S.pair=e.target.value;save();renderCalc()};
+ const d=$("drop");
+ d.onclick=e=>{if(!e.target.closest("[data-rm]"))$("file").click()};
+ $("addmore").onclick=()=>$("file").click();
+ $("file").onchange=e=>{addFiles(e.target.files);e.target.value=""};
+ ["dragenter","dragover"].forEach(v=>d.addEventListener(v,e=>{e.preventDefault();d.classList.add("border-blue-500")}));
+ ["dragleave","drop"].forEach(v=>d.addEventListener(v,e=>{e.preventDefault();d.classList.remove("border-blue-500")}));
+ d.addEventListener("drop",e=>addFiles(e.dataTransfer.files));
+ $("thumbs").onclick=e=>{const b=e.target.closest("[data-rm]");if(!b)return;e.stopPropagation();S.files.splice(+b.dataset.rm,1);save();renderFiles()};
+ $("clear").onclick=()=>$("modal").classList.remove("hidden");
+ $("no").onclick=()=>$("modal").classList.add("hidden");
+ $("yes").onclick=()=>{try{localStorage.removeItem(KEY)}catch(e){}S=fresh();renderAll();$("modal").classList.add("hidden");toast("Dashboard cleared")};
+}
+// ---------- AI COACH ----------
+const RULES=["You are the system coach inside an SMC/ICT pre-trade dashboard for one trader. Judge setups ONLY against the trader's system below. Never invent or alter rules. If a screenshot can't confirm something, say what is unclear instead of guessing. You are not a financial advisor; be direct, concise, and point to specific checklist items.",
+"SYSTEM: Analyse DXY first for dollar bias. 1st priority: XAUUSD, GBPUSD, EURUSD (if news supports). 2nd priority: USDCHF, USDCAD (only with news that day 9:00-17:00 SAST). BTCUSD only at weekends and only if balance exceeds R100.",
+"15m HTF: mark 00:00 Monday of the previous week, external high/low; read structure on the line chart (impulses, corrections, BOS, CHoCH); plot 15m PSY levels 0.1000, 0.0750, 0.0500, 0.0250, 0.0000; the 50 SMA validates structure only if it passes through the price body leading to the BOS, not just a wick; a reversal is valid only if it breaks a high/low that the SMA passed through; align FVG/OB/supply-demand/S&R with the SMA zone and PSY level.",
+"1m LTF: find consolidation, measure it with the volume profile, wait for the high/low to be broken or induced, then a BOS the opposite way, then a retracement to the POC aligned with other confluences. Measure the internal range. 1m PSY levels: 0.0875, 0.0625, 0.0375, 0.0125. Entry gaps run hourly 07:00-18:00 SAST: first 15 minutes = LTF confirmation (BOS, PSY alignment, valid POI, SMA); golden period = 15-30 minutes past the hour. Fib the impulse that made the BOS (-1, -0.618, 0, 0.382, 0.5, 0.618, 0.786, 1). Entry at 61.8% overlapping POC, valid POI, BOS, SMA passthrough zone and a PSY level, during the golden period.",
+"RISK: SL at the adjacent Fib level (entry 61.8% -> SL 78.6%), max 5 pips on FX, 50 pips on BTCUSD. TP between -61.8% and -200%, min 15 pips (150 on BTCUSD), aligned with a POI or PSY level. Breakeven: once price breaks 0.0% Fib, move SL to entry. Lot sizing uses the per-pair ratios from the trader's RCG Classic (1:2000) table, shown in the dashboard state below.",
+"EMA/SMA + CANDLE CONFIRMATION (mandatory): price must be at an Entry Gap (07:00-18:00 SAST hourly; 00-15 min confirmation, 15-30 min Golden Period) and have interacted with a PSY level (15m .1000/.0750/.0500/.0250/.0000 or 1m .0875/.0625/.0375/.0125); an interaction with the 50 EMA is then expected. 50 EMA = thick red line, 50 SMA = thin red line, 200 SMA = blue line. Bearish stack: 200 SMA (blue) above 50 SMA (thin red) above 50 EMA (thick red), all sloping down. Bullish stack: 50 EMA > 50 SMA > 200 SMA, sloping up. For the candle that touches or breaks the 50 EMA, state whether it is bullish or bearish and its intent: momentum (impulsive, corrective, rejection or absorption), directional bias from structure (BOS, CHoCH, line chart, weekly range, sweep or inducement), MA formation (stack, slope, crossover versus consolidation trap, SMA body passthrough versus wick-only) and other confluences (FVG, OB, supply/demand, S/R, POC, PSY, Fib, DXY or USDT.D). Then confirm Entry Gap and Golden Zone (61.8% overlapping POC, valid POI, SMA/EMA zone, PSY level); only trade at the POI with this confirmation. ALWAYS check the candle against the Candlestick Pattern Document: name the pattern and say whether it shows continuation, rejection, sweep or invalidation; if the document text is not in the context, say so and mark the candle UNVERIFIED. 15M CLOSE: inspect the close of the 15-minute candle on the 15m chart during the Entry Gap or Golden Zone (close location versus highs/lows, levels, EMA/SMA and POI; wick rejection; body displacement; follow-through or reversal) and judge it VALID or INVALID against the Candlestick Pattern Document.",
+"BTCUSD/CRYPTO MODULE: BTCUSD is traded only at weekends or in high volatility and only if balance exceeds R100 (reference 0.02 lot at R100, margin R29.07 per 0.01 lot). Max SL 50 pips at 78.6% Fib, min TP 150 pips between -61.8% and -200% Fib, breakeven on the 0.0% Fib break. Use USDT.D (Tether Dominance) as inverse context: USDT.D falling or rejecting resistance supports BTCUSD upside, USDT.D rising or bouncing off demand pressures BTCUSD; flag divergence. All the same HTF and LTF gates apply.",
+"OUTPUT FORMAT: Write plain text only (no markdown symbols like ** or #). Answer the question first, then ALWAYS finish with a section that starts with the line SUMMARY and has exactly these three parts. 1) BIAS: Bullish, Bearish or Neutral, with a one or two line basis taken from the analysis (structure, BOS/CHoCH, SMA, PSY levels, DXY if visible). If the evidence is unclear or conflicting, say Neutral and why. 2) NOT COVERED: list by name every checklist item that is unticked, plus any ticked item the screenshots or notes do not actually support. If every item is covered, say so. 3) RECOMMENDATIONS: what should happen next, as short numbered steps tied to the system (for example what to mark or confirm, whether to wait for the next golden period, where entry, stop loss, take profit and breakeven would sit, and when to stand aside). Never recommend anything that breaks the system rules."].join("\n");
+let turns=[],ctl=null,busy=false;
+function ctx(){
+ const r=calc(),L=[];
+ CATS.forEach((c,i)=>{L.push(c+":");ITEMS.filter(x=>x.cat===i).forEach(x=>L.push((S.checked[x.id]?"  [x] ":"  [ ] ")+x.label))});
+ L.push("Instrument: "+S.pair+"; balance: R"+(S.bal||"not entered"));
+ L.push("Calculator: "+r.lots.toFixed(2)+" lots, loss at SL "+fmt(r.loss)+", profit at min TP "+fmt(r.profit)+(r.note?" ("+r.note+")":""));
+ L.push("Setup notes: "+(S.notes.trim()||"(none)"));
+ L.push("Uploaded files: "+(S.files.map(f=>f.name).join(", ")||"(none)"));L.push(maCtx());L.push(cryptoCtx());L.push(libCtx());
+ return L.join("\n")}
+function bubble(role,text){const d=document.createElement("div");d.className="rounded-xl px-3 py-2 text-sm whitespace-pre-wrap "+(role==="user"?"bg-blue-600/20 ml-8":"bg-slate-900/70 mr-8");d.textContent=text;$("msgs").appendChild(d);$("msgs").scrollTop=1e9;return d}
+function dataToBlob(u){const p=u.split(","),m=/:(.*?);/.exec(p[0]),b=atob(p[1]),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return new Blob([a],{type:m?m[1]:"image/png"})}
+const ERR={not_granted:"Claude access was declined for this page.",rate_limited:"Too many requests or usage limit reached. Try again later.",image_rejected:"One of the images couldn’t be used. Remove it or untick “Include my screenshots”.",session_expired:"Please sign in to Claude again.",refused:"Claude declined that request. Try rephrasing.",upstream_error:"Something went wrong. Try again."};
+async function initCoach(){
+ let sample=null;try{sample=window.claude&&await claude.use("sample")}catch(e){}
+ if(!sample){$("coachoff").classList.remove("hidden");return}
+ $("coachon").classList.remove("hidden");
+ let lim=null;try{lim=await sample.limits()}catch(e){}
+ SAMPLE=sample;LIM=lim;
+ const img=lim&&lim.images;
+ if(!img)$("inclwrap").classList.add("hidden");
+ async function send(q){
+  q=q.trim();if(busy||!q)return;busy=true;$("q").value="";
+  $("send").classList.add("hidden");$("stop").classList.remove("hidden");
+  bubble("user",q);const b=bubble("ai","Thinking…");
+  turns.push({role:"user",content:q});
+  ctl=new AbortController();
+  const opts={cache:false,signal:ctl.signal,onText:({text})=>{b.textContent=text;$("msgs").scrollTop=1e9}};
+  try{
+   if(img&&$("incl").checked){
+    const ok=img.mediaTypes||[];
+    const bl=ctxFiles(q).filter(f=>f.type.startsWith("image/")&&f.data.startsWith("data:")&&(!ok.length||ok.includes(f.type))).slice(0,img.maxCount||4).map(f=>dataToBlob(f.data));
+    if(bl.length)opts.images=bl}
+   const hist=turns.slice(-11);
+   const {text}=await sample([{role:"user",content:RULES+"\n\nCURRENT DASHBOARD STATE:\n"+ctx()},...hist],opts);
+   turns.push({role:"assistant",content:text});
+  }catch(e){
+   turns.pop();
+   if(e.code==="cancelled"){b.textContent=(e.text||"")+"\n(stopped)"}
+   else b.textContent=(e.text?e.text+"\n":"")+(ERR[e.code]||ERR.upstream_error);
+   if(e.code==="not_granted"||e.code==="sampling_disabled")$("coachon").classList.add("hidden"),$("coachoff").classList.remove("hidden");
+  }finally{busy=false;$("send").classList.remove("hidden");$("stop").classList.add("hidden")}
+ }
+ $("send").onclick=()=>send($("q").value);
+ $("q").onkeydown=e=>{if(e.key==="Enter")send($("q").value)};
+ $("stop").onclick=()=>ctl&&ctl.abort();
+ $("quick").onclick=e=>{const b=e.target.closest("[data-q]");if(b)send(b.dataset.q)};
+}
+// ---------- SIMULATOR, AUDIT, JOURNAL ----------
+let SAMPLE=null,LIM=null,lastAudit=null;
+const JK='smc-journal-v1',r2=x=>Math.round(x*100)/100;
+const gJ=()=>{try{return JSON.parse(localStorage.getItem(JK)||'[]')}catch(e){return[]}};
+const sJ=a=>{try{localStorage.setItem(JK,JSON.stringify(a));return true}catch(e){toast('Journal storage full: export and delete old entries');return false}};
+function tierLot(b,p){const a=(Math.floor(b/50)+1)/100;if(p==='BTCUSD')return b>100?r2(a-.01):0;if(b<50)return p==='XAUUSD'?0:.01;if(p==='XAUUSD')return b<100?.01:r2(a-.01);return a}
+function simulate(){const k=$('sp').value,p=PAIRS[k],b0=+$('sb').value||0,t=+$('st').value||0,lim=Math.max(t,b0*10);let b=b0;const rows=[];
+ for(let n=1;n<=60&&b<lim;n++){const lot=tierLot(b,k);if(!lot){rows.push({n,lot:0});break}const f=lot/.01,pr=f*p.m*p.tp/100,ls=f*p.m*p.sl/100;b+=pr;rows.push({n,lot,pr,ls,b})}
+ return{k,p,b0,t,rows,w:rows.findIndex(r=>r.b>=t)+1,ten:rows.findIndex(r=>r.b>=b0*10)+1}}
+function simText(s){return['Instrument: '+s.k,'Start balance: '+fmt(s.b0),'Target: '+fmt(s.t),'Margin per 0.01 lot: R'+s.p.m,'Max SL = '+s.p.sl+'% of that margin; min TP = '+s.p.tp+'%','Lot rule: under R50 0.01 (XAUUSD restricted); R50-R100 0.02 (XAUUSD 0.01); +0.01 per R50 after; BTCUSD needs balance over R100','Wins needed for target: '+(s.w||'not reachable'),'10x milestone win: '+(s.ten||'not reached'),'Trade by trade (all wins):'].concat(s.rows.map(r=>r.lot?'win '+r.n+': lot '+r.lot.toFixed(2)+', profit '+fmt(r.pr)+', loss if stopped '+fmt(r.ls)+', balance '+fmt(r.b):'win '+r.n+': restricted, no lot allowed')).join('\n')}
+function runSim(){const s=simulate(),o=$('simout');
+ if(!s.b0){o.textContent='Enter a starting balance.';return}
+ const per=s.p.m*s.p.sl/100,rk=.2*s.b0,mx=Math.floor(rk/per)*.01,f=s.rows[0];
+ o.innerHTML=`<p>Winning trades needed to reach ${fmt(s.t)}: <b class='text-blue-400'>${s.w||'not reachable (restricted or over 60 trades)'}</b></p>
+ <p class='mt-1'>10x milestone (${fmt(s.b0*10)}): <b class='${s.ten&&s.ten<=3?'text-emerald-400':'text-amber-400'}'>${s.ten?'win #'+s.ten+(s.ten<=3?' (inside the 3-trade target)':' (beyond 3 trades)'):'not reached'}</b></p>
+ <p class='mt-1 text-slate-300'>20% balance risk: one 0.01 lot loses ${fmt(per)} at max SL; 20% of ${fmt(s.b0)} is ${fmt(rk)}, so ${mx>0?'up to '+mx.toFixed(2)+' lots fit':'even 0.01 lot exceeds it'} (Rx of Ry).</p>
+ ${f&&f.lot?`<p class='mt-1 text-slate-300'>First trade: ${f.lot.toFixed(2)} lots, profit ${fmt(f.pr)}, loss ${fmt(f.ls)}.</p>`:`<p class='mt-1 text-amber-400'>Restricted at this balance for ${s.k}.</p>`}
+ <div class='overflow-auto max-h-72 mt-3'><table class='w-full text-xs sm:text-sm text-left'><thead class='text-slate-400'><tr><th class='py-1'>Win</th><th>Lot</th><th>Profit</th><th>Balance</th></tr></thead><tbody>${s.rows.filter(r=>r.lot).map(r=>`<tr class='border-t border-slate-700 ${r.n===s.ten?'bg-emerald-500/10':r.n===3?'bg-blue-500/10':''}'><td class='py-1'>${r.n}</td><td>${r.lot.toFixed(2)}</td><td>${fmt(r.pr)}</td><td>${fmt(r.b)}</td></tr>`).join('')}</tbody></table></div>`}
+async function simAsk(){const q=$('simq').value.trim(),a=$('simans');if(!q)return;
+ if(!SAMPLE){a.textContent='The Q&A needs the claude.ai link of this page.';return}
+ a.textContent='Thinking...';
+ try{const r=await SAMPLE([{role:'user',content:RULES+'\n\nLIVE CALCULATOR STATE:\n'+simText(simulate())+'\n\nAnswer with exact maths from these figures only and show the calculation briefly. Plain text.\n\nQuestion: '+q}],{cache:false,onText:({text})=>{a.textContent=text}});a.textContent=r.text}catch(e){a.textContent=ERR[e.code]||ERR.upstream_error}}
+const AUDIT=RULES+'\n'+['AUDIT GATES (apply strictly):',
+'1 DXY CORRELATION GATE: XXX/USD pairs (EURUSD, GBPUSD, XAUUSD, AUDUSD, NZDUSD) must move inversely to DXY; if the pair mirrors DXY intent flag POTENTIAL LIQUIDITY TRAP - AVOID. USD/XXX pairs (USDCHF, USDCAD, USDJPY) must align directly with DXY. For XAUUSD check intermarket catch-up divergence against EURUSD and GBPUSD.',
+'2 15M HTF: Monday 00:00 SAST weekly range, line-chart BOS/CHoCH, 15m PSY levels (.1000, .0750, .0500, .0250, .0000), and the 50 SMA candle-body passthrough rule (wick-only touch = INVALID ZONE).',
+'3 TRIPLE MA STACK: Bullish = 50 EMA > 50 SMA > 200 SMA all sloping up; Bearish = 200 SMA > 50 SMA > 50 EMA all sloping down. A crossover alone is a consolidation trap.',
+'4 1M GOLDEN PERIOD: minutes 00-15 liquidity sweep + LTF BOS + partial MA break; minutes 15-30 entry at 61.8% Fib + volume profile POC + 1m PSY (.0875, .0625, .0375, .0125); SL at 78.6% Fib; breakeven when 0.0% Fib breaks; TP between -61.8% and -200% Fib.',
+'5 JOURNAL PATTERN MATCH, compare against the trader history: Oct 20 XAUUSD buy WIN (intermarket catch-up while EURUSD and GBPUSD turned bullish, DXY weakening); Oct 30 XAUUSD buy WIN (valid LTF bullish BOS, SL to breakeven after 0.0% break); Oct 30 GBPUSD sell LOSS (no bearish BOS); Oct 27 XAUUSD LOSS (no session bias set); Oct 28 and Nov 12 disciplined NO TRADE decisions (price failed SMA passthrough or entry gap confluence).',
+'6 EMA/SMA AND CANDLE CONFIRMATION: apply the EMA/SMA + CANDLE CONFIRMATION and 15M CLOSE rules above: Entry Gap and PSY pre-condition, the candle that touches or breaks the 50 EMA (bullish or bearish, intent), Entry Gap and Golden Zone, Candlestick Pattern Document check (UNVERIFIED if the document text is not in context) and the 15m candle close verdict (VALID or INVALID). For BTCUSD also apply the BTCUSD/CRYPTO MODULE rules (R100 gate, USDT.D context).',
+'OUTPUT: plain text, no markdown. Sections in order: DXY GATE, 15M HTF, MA STACK, 1M EXECUTION, EMA/SMA CONFIRMATION, 15M CANDLE CLOSE, CRYPTO CONTEXT (only if BTCUSD), JOURNAL MATCH. Then a line exactly BIAS: Bullish, BIAS: Bearish or BIAS: Neutral, then a line exactly VERDICT: GO or VERDICT: NO-GO, then SUMMARY with exactly 1) BIAS:, 2) NOT COVERED:, 3) RECOMMENDATIONS:. If something cannot be seen in the charts, say so. Default to NO-GO when a gate fails or is unclear.'].join('\n');
+function blobs(){const im=LIM&&LIM.images;if(!im)return[];const ok=im.mediaTypes||[];return ctxFiles('audit').filter(f=>f.type.startsWith('image/')&&f.data.startsWith('data:')&&(!ok.length||ok.includes(f.type))).slice(0,im.maxCount||4).map(f=>dataToBlob(f.data))}
+function renderAudit(){const im=ctxFiles('audit').filter(f=>f.type.startsWith('image/'));$('aimgs').innerHTML=im.length?im.map(f=>`<img src='${f.data}' alt='' class='h-16 rounded border border-slate-700'>`).join(''):`<span class='text-sm text-slate-400'>No charts yet. Add them on the Dashboard canvas first.</span>`;renderJournal()}
+async function runAudit(){const o=$('aout');
+ if(!SAMPLE){o.textContent='The audit needs the claude.ai link of this page.';return}
+ const bl=blobs();if(!bl.length){o.textContent='Add chart images on the Dashboard canvas first.';return}
+ $('runaudit').disabled=true;$('asave').classList.add('hidden');o.textContent='Auditing...';
+ const now=new Date().toLocaleString('en-ZA',{timeZone:'Africa/Johannesburg'});
+ try{const r=await SAMPLE([{role:'user',content:AUDIT+'\n\nCURRENT TIME (SAST): '+now+'\n\nDASHBOARD STATE:\n'+ctx()+'\n\nPASTED EXTERNAL NOTES:\n'+($('anotes').value||'(none)')}],{cache:false,images:bl,onText:({text})=>{o.textContent=text}});
+  lastAudit=r.text;o.textContent=r.text;$('asave').classList.remove('hidden')}
+ catch(e){o.textContent=(e.text?e.text+'\n':'')+(ERR[e.code]||ERR.upstream_error)}
+ $('runaudit').disabled=false}
+const thumb=u=>new Promise(res=>{const i=new Image();i.onload=()=>{const c=document.createElement('canvas'),s=160/Math.max(i.width,1);c.width=160;c.height=Math.max(1,Math.round(i.height*s));c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.6))};i.onerror=()=>res('');i.src=u});
+async function saveJ(){if(!lastAudit)return;const t=lastAudit,m=/BIAS:\s*(Bullish|Bearish|Neutral)/i.exec(t),v=/VERDICT:\s*(NO-GO|GO)/i.exec(t),tz={timeZone:'Africa/Johannesburg'},d=new Date(),th=[];
+ for(const f of S.files.filter(f=>f.type.startsWith('image/')).slice(0,3))th.push(await thumb(f.data));
+ const a=gJ();a.unshift({id:Date.now(),date:d.toLocaleDateString('en-CA',tz),hour:d.toLocaleTimeString('en-GB',{...tz,hour:'2-digit'})+':00',pair:S.pair,bias:m?m[1][0].toUpperCase()+m[1].slice(1).toLowerCase():'Neutral',verdict:v?v[1].toUpperCase():'NO-GO',critique:t,thumbs:th.filter(Boolean)});
+ if(sJ(a)){toast('Saved to journal');renderJournal()}}
+function renderJournal(){const a=gJ();$('jlist').innerHTML=a.length?a.map(e=>`<div class='rounded-xl bg-slate-900/50 p-3 mb-2'><div class='flex flex-wrap items-center gap-2 text-sm'><b>${esc(String(e.pair))}</b><span class='text-slate-400'>${esc(String(e.date))} ${esc(String(e.hour))} SAST</span><span class='px-2 py-0.5 rounded text-xs ${e.bias==='Bullish'?'bg-emerald-500/15 text-emerald-400':e.bias==='Bearish'?'bg-red-500/15 text-red-400':'bg-slate-600/40'}'>${esc(String(e.bias))}</span><span class='text-xs font-semibold ${e.verdict==='GO'?'text-emerald-400':'text-red-400'}'>${esc(String(e.verdict))}</span><button data-jd='${e.id}' class='ml-auto text-xs text-slate-400 hover:text-red-300'>Delete</button></div><div class='flex gap-2 my-2'>${(e.thumbs||[]).map(t=>`<img src='${esc(t)}' alt='' class='h-14 rounded'>`).join('')}</div><details class='text-xs text-slate-300'><summary class='cursor-pointer text-slate-400'>AI critique</summary><div class='whitespace-pre-wrap mt-2'>${esc(String(e.critique||''))}</div></details></div>`).join(''):`<p class='text-sm text-slate-400'>No entries yet. Run an audit and save it.</p>`}
+function initTools(){
+ $('sp').innerHTML=Object.keys(PAIRS).map(k=>`<option>${esc(k)}</option>`).join('');
+ ['sb','sp','st'].forEach(i=>$(i).oninput=()=>{$(i).dataset.t=1;runSim()});
+ $('simask').onclick=simAsk;$('simq').onkeydown=e=>{if(e.key==='Enter')simAsk()};
+ $('runaudit').onclick=runAudit;$('asave').onclick=saveJ;
+ $('jlist').onclick=e=>{const b=e.target.closest('[data-jd]');if(!b)return;sJ(gJ().filter(x=>String(x.id)!==b.dataset.jd));renderJournal()};
+ $('jexp').onclick=()=>{const t=$('jbox');t.classList.remove('hidden');t.value=JSON.stringify(gJ());t.select();toast('Copy this JSON as your backup')};
+ $('jimp').onclick=()=>{const t=$('jbox'),v=t.value.trim();t.classList.remove('hidden');if(!v.startsWith('[')){toast('Paste your backup JSON in the box, then press Import again');return}
+  try{const inc=JSON.parse(v),cur=gJ(),ids=new Set(cur.map(x=>x.id)),m=cur.concat(inc.filter(x=>x&&x.id&&!ids.has(x.id))).sort((a,b)=>b.id-a.id);if(sJ(m)){renderJournal();toast('Imported')}}catch(e){toast('That is not valid journal JSON')}}}
+// ---------- CRYPTO + EMA/SMA CONFIRMATION ----------
+let VIEW='dash';
+const CTAGS=['General BTCUSD','15m HTF','1m LTF / Golden Zone','15m Candle Close','USDT.D / Context','Candlestick Doc'];
+const MAF=[['psy','PSY & Entry Gap status',['PSY Interacted + In Entry Gap','Partial / Pending','Not Met']],
+['stack','MA stack: 50 EMA (thick red), 50 SMA (thin red), 200 SMA (blue)',['Bearish Stack: 200 SMA (Blue) > 50 SMA (Thin Red) > 50 EMA (Thick Red)','Bullish Stack: 50 EMA > 50 SMA > 200 SMA','Mixed / Crossover / Trap']],
+['candle','Trigger candle type',['Bullish Candle','Bearish Candle','Doji / Indecision']],
+['gap','Entry Gap & Golden Zone status',['In Entry Gap & Golden Zone (61.8% + POC + POI)','In Entry Gap Only','Outside Window']],
+['doc','Candlestick pattern doc confirmation',['Confirmed by Candlestick Doc','Invalidated by Candlestick Doc','Doc Needed / Unverified']],
+['close','15m candle close (15m chart, Entry Gap / Golden Zone)',['15m Close Validated via Candlestick Doc','15m Close Invalid / Rejected','Awaiting 15m Close']]];
+const MAC=['Entry Gap + PSY level interaction','50 EMA / 50 SMA / 200 SMA observed','Candle type and intent read','Entry Gap and Golden Zone confirmed','Candlestick doc confirms the candle','15m candle close validated'];
+const useC=q=>VIEW==='crypto'||S.pair==='BTCUSD'||/btc|bitcoin|crypto|usdt/i.test(q||'');
+const ctxFiles=q=>S.files.concat(useC(q)?S.cryptoFiles:[]);
+function maHTML(p){const m=S.ma,n=MAC.filter((_,i)=>m.c[i]).length;
+ return `<div class='flex items-center justify-between mb-1'><h2 class='font-semibold'>EMA/SMA &amp; 15m close confirmation</h2><span class='text-xs text-slate-300'>${n} / 6</span></div>
+ <div class='flex flex-wrap gap-1.5 mb-3 text-[10px] font-bold tracking-wider'><span class='px-2 py-0.5 rounded bg-red-500/20 text-red-400 border-b-4 border-red-500'>50 EMA THICK RED</span><span class='px-2 py-0.5 rounded bg-red-300/10 text-red-300 border-b border-red-300'>50 SMA THIN RED</span><span class='px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-400 border-b-2 border-indigo-400'>200 SMA BLUE</span></div>
+ <div class='space-y-1.5 mb-3'>${MAC.map((t,i)=>`<div data-mac='${i}' class='flex items-center gap-2 text-sm cursor-pointer rounded-lg px-2 py-1.5 bg-slate-900/50 hover:bg-slate-900 transition-all duration-200 ${m.c[i]?'opacity-60':''}'><span class='w-4 h-4 shrink-0 rounded border-2 grid place-items-center ${m.c[i]?'bg-blue-500 border-blue-500':'border-slate-500'}'>${m.c[i]?`<svg width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='#fff' stroke-width='4'><path d='M5 12l5 5 9-10'/></svg>`:''}</span>${t}</div>`).join('')}</div>
+ <div class='space-y-2'>${MAF.map(([k,l,o])=>`<div><label class='lbl'>${l}</label><select data-mak='${k}' class='w-full mt-1 px-2 py-1.5 text-xs'><option value=''>Select...</option>${o.map(x=>`<option ${m.v[k]===x?'selected':''}>${esc(x)}</option>`).join('')}</select></div>`).join('')}
+ <div><label class='lbl'>Candle intent (momentum, structure bias, MA formation, confluences)</label><textarea ${p?'':`id='maIntentNote'`} data-man rows='3' class='w-full mt-1 p-2 text-xs'>${esc(m.n||'')}</textarea></div></div>`}
+function renderMA(){$('ema15mCard').innerHTML=maHTML('');const c=$('cMA');if(c)c.innerHTML=maHTML('c')}
+function maCtx(){const m=S.ma;return 'EMA/SMA + 15m close confirmation: '+MAC.map((t,i)=>(m.c[i]?'[x] ':'[ ] ')+t).join('; ')+' | '+MAF.map(([k,l])=>l+': '+(m.v[k]||'not set')).join('; ')+' | Candle intent note: '+((m.n||'').trim()||'(none)')}
+function cryptoCtx(){const b=parseFloat(S.bal)||0,f=S.cryptoFiles,docs=f.filter(x=>x.text&&x.tag==='Candlestick Doc').map(x=>x.name+': '+x.text).join('\n');
+ return 'BTCUSD/crypto context: balance gate '+(b>100?'unlocked (over R100)':'LOCKED (R100 or less)')+'; crypto files: '+(f.map(x=>x.name+' ['+x.tag+']').join(', ')||'(none)')+'; crypto notes: '+((S.cryptoNotes||'').trim()||'(none)')+'; Candlestick Pattern Document text: '+(docs||'NOT PROVIDED as readable text (mark the candle UNVERIFIED unless the screenshots show it)')}
+function renderCrypto(){const b=parseFloat(S.bal)||0,p=PAIRS.BTCUSD,lot=tierLot(b,'BTCUSD'),k=lot/.01,ok=b>100,f=S.cryptoFiles;
+ $('cbal').value=S.bal;$('cnotes').value=S.cryptoNotes||'';
+ $('cgate').className='rounded-xl px-4 py-2 text-sm font-semibold '+(ok?'bg-emerald-500/15 text-emerald-400 border border-emerald-500/40':'bg-amber-500/15 text-amber-400 border border-amber-500/40');
+ $('cgate').textContent=ok?'UNLOCKED - Balance > R100':'LOCKED - Balance <= R100';
+ $('clot').textContent=lot.toFixed(2);$('cnote').textContent=ok?'':'BTCUSD is only traded if balance exceeds R100';
+ $('closs').textContent=fmt(k*p.m*p.sl/100);$('cprofit').textContent=fmt(k*p.m*p.tp/100);
+ $('cdroptxt').classList.toggle('hidden',f.length>0);$('cthumbs').classList.toggle('hidden',!f.length);$('caddmore').classList.toggle('hidden',!f.length);
+ $('cthumbs').innerHTML=f.map((x,i)=>`<div class='relative group rounded-lg overflow-hidden bg-slate-900 border border-slate-700'><div class='aspect-video grid place-items-center'>${x.type.startsWith('image/')?`<img src='${x.data}' alt='' class='w-full h-full object-cover'>`:`<div class='text-xs text-slate-300 p-2 break-all'>&#128196; ${esc(x.name)}</div>`}</div><select data-ctag='${i}' class='w-full text-[10px] px-1 py-1'>${CTAGS.map(t=>`<option ${x.tag===t?'selected':''}>${t}</option>`).join('')}</select><button data-crm='${i}' class='absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 text-xs opacity-0 group-hover:opacity-100 transition-all duration-200' aria-label='Remove'>&times;</button></div>`).join('');
+ const im=f.filter(x=>x.type.startsWith('image/')).length;
+ $('cctx').textContent=im+' BTCUSD screenshot(s) and '+(f.length-im)+' document(s) loaded into AI context. Only images and .txt/.md/.json text can be read by the AI; for PDF or Word candlestick documents, paste the pattern rules into the notes.';
+ renderMA()}
+function addCFiles(list){[...list].forEach(f=>{if(f.size>MAXF){toast(f.name+' is over 2.5 MB, skipped');return}
+ if(!f.type.startsWith('image/'))ingest(f);
+ const r=new FileReader(),isT=/\.(txt|md|json)$/i.test(f.name)||/^text\//.test(f.type);
+ r.onload=()=>{const x={name:f.name,type:f.type||'file',data:r.result,tag:/candle/i.test(f.name)?'Candlestick Doc':'General BTCUSD'};
+  const fin=()=>{S.cryptoFiles.push(x);if(!save())S.cryptoFiles.pop();renderCrypto()};
+  if(isT){const t=new FileReader();t.onload=()=>{x.text=String(t.result).slice(0,8000);fin()};t.readAsText(f)}else fin()};
+ r.readAsDataURL(f)})}
+function bubbleTo(o,role,text){const d=document.createElement('div');d.className='rounded-xl px-3 py-2 text-sm whitespace-pre-wrap '+(role==='user'?'bg-blue-600/20 ml-8':'bg-slate-900/70 mr-8');d.textContent=text;o.appendChild(d);o.scrollTop=1e9;return d}
+async function cAsk(q){q=q.trim();const o=$('cmsgs');if(!q||busy)return;
+ if(!SAMPLE){bubbleTo(o,'ai','The crypto coach only runs from the claude.ai link of this page.');return}
+ busy=true;$('cq').value='';bubbleTo(o,'user',q);const b=bubbleTo(o,'ai','Thinking...'),opts={cache:false,onText:({text})=>{b.textContent=text;o.scrollTop=1e9}};
+ try{const im=LIM&&LIM.images;if(im){const ok=im.mediaTypes||[],bl=ctxFiles('btc').filter(f=>f.type.startsWith('image/')&&f.data.startsWith('data:')&&(!ok.length||ok.includes(f.type))).slice(0,im.maxCount||4).map(f=>dataToBlob(f.data));if(bl.length)opts.images=bl}
+  const r=await SAMPLE([{role:'user',content:RULES+'\n\nCURRENT DASHBOARD STATE:\n'+ctx()+'\n\nQuestion about BTCUSD/crypto: '+q}],opts);b.textContent=r.text}
+ catch(e){b.textContent=(e.text?e.text+'\n':'')+(ERR[e.code]||ERR.upstream_error)}
+ busy=false}
+function initCrypto(){
+ $('cbal').oninput=e=>{S.bal=e.target.value;$('bal').value=S.bal;save();renderCalc();renderCrypto()};
+ $('bal').addEventListener('input',()=>{if(VIEW==='crypto')renderCrypto()});
+ let t;$('cnotes').oninput=e=>{S.cryptoNotes=e.target.value;clearTimeout(t);t=setTimeout(()=>{save();const s=$('csaved');s.style.opacity=1;setTimeout(()=>s.style.opacity=0,1400)},600)};
+ const d=$('cdrop');
+ d.onclick=e=>{if(!e.target.closest('[data-crm],select'))$('cfile').click()};
+ $('caddmore').onclick=()=>$('cfile').click();
+ $('cfile').onchange=e=>{addCFiles(e.target.files);e.target.value=''};
+ ['dragenter','dragover'].forEach(v=>d.addEventListener(v,e=>{e.preventDefault();d.classList.add('border-blue-500')}));
+ ['dragleave','drop'].forEach(v=>d.addEventListener(v,e=>{e.preventDefault();d.classList.remove('border-blue-500')}));
+ d.addEventListener('drop',e=>addCFiles(e.dataTransfer.files));
+ $('cthumbs').onclick=e=>{const b=e.target.closest('[data-crm]');if(!b)return;e.stopPropagation();S.cryptoFiles.splice(+b.dataset.crm,1);save();renderCrypto()};
+ document.addEventListener('click',e=>{const t=e.target.closest('[data-mac]');if(!t)return;S.ma.c[t.dataset.mac]=!S.ma.c[t.dataset.mac];save();renderMA()});
+ document.addEventListener('change',e=>{const d=e.target.dataset||{};if(d.mak){S.ma.v[d.mak]=e.target.value;save();renderMA()}else if(d.ctag!==undefined){S.cryptoFiles[+d.ctag].tag=e.target.value;save()}});
+ document.addEventListener('input',e=>{if(e.target.hasAttribute&&e.target.hasAttribute('data-man')){S.ma.n=e.target.value;save()}});
+ $('csend').onclick=()=>cAsk($('cq').value);$('cq').onkeydown=e=>{if(e.key==='Enter')cAsk($('cq').value)};
+ $('cquick').onclick=e=>{const b=e.target.closest('[data-q]');if(b)cAsk(b.dataset.q)};
+ renderMA()}
+// ---------- FLOATING ASSISTANT + DOCUMENT LIBRARY ----------
+let CTXLIB=true,fturns=[],fctl=null,fbusy=false,socratic=false;
+const DK='smc-ai-docs-v1',CK='smc-ai-chat-v1';
+const gD=()=>{try{return JSON.parse(localStorage.getItem(DK)||'[]')}catch(e){return[]}};
+const sD=a=>{try{localStorage.setItem(DK,JSON.stringify(a));return true}catch(e){toast('Library storage full: remove a document');return false}};
+const LIBS={pdfjs:'https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js',mammoth:'https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js'},lp={};
+const loadLib=k=>lp[k]||(lp[k]=new Promise((res,rej)=>{const s=document.createElement('script');s.src=LIBS[k];s.onload=res;s.onerror=()=>{delete lp[k];rej(new Error('load'))};document.head.appendChild(s)}));
+async function pdfText(buf){await loadLib('pdfjs');const L=window.pdfjsLib;L.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js';const d=await L.getDocument({data:buf}).promise;let t='';for(let i=1;i<=Math.min(d.numPages,80);i++){const c=await (await d.getPage(i)).getTextContent();t+=c.items.map(x=>x.str).join(' ')+'\n'}return t}
+async function ingest(f){const n=f.name,ext=(n.split('.').pop()||'').toLowerCase();
+ try{let t='';
+  if(ext==='pdf')t=await pdfText(await f.arrayBuffer());
+  else if(ext==='docx'){await loadLib('mammoth');t=(await window.mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value}
+  else if(/^(txt|md|json|csv|html|htm|xml|log)$/.test(ext)||/^text\//.test(f.type))t=await f.text();
+  else{toast(n+': this type cannot be read. Save it as PDF, DOCX or TXT.');return}
+  t=t.replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim();
+  if(!t){toast(n+': no readable text found (scanned PDF?). Upload page screenshots instead.');return}
+  const a=gD().filter(d=>d.name!==n);a.push({id:String(Math.floor(Date.now()*1000+Math.random()*1000)),name:n,text:t.slice(0,80000),chars:t.length});
+  if(sD(a)){renderLib();toast(n+' added to the AI library')}
+ }catch(e){toast('Could not read '+n)}}
+function kb(q,max){const docs=gD();if(!docs.length)return '';const w=[...new Set((q||'').toLowerCase().match(/[a-z0-9.%]{3,}/g)||[])],ch=[];
+ docs.forEach(d=>{for(let i=0;i<d.text.length;i+=1500){const c=d.text.slice(i,i+1500),l=c.toLowerCase();let s=i===0?2:0;w.forEach(x=>{if(l.includes(x))s++});ch.push({n:d.name,c,s})}});
+ ch.sort((a,b)=>b.s-a.s);let out='',tot=0;for(const x of ch){if(tot+x.c.length>max)break;out+='['+x.n+'] '+x.c+'\n---\n';tot+=x.c.length}return out}
+function libCtx(){if(!CTXLIB)return '';const t=kb(S.notes+' '+S.pair,6000);return t?'LIBRARY EXCERPTS:\n'+t:'LIBRARY: (empty)'}
+function renderLib(){const d=gD(),n=d.length;$('flibbtn').textContent='Library ('+n+')';
+ $('flib').innerHTML=n?d.map(x=>`<div class='flex items-center justify-between gap-2 py-1'><span class='truncate'>${esc(x.name)} <span class='text-slate-500'>${Math.round(x.chars/1000)}k chars</span></span><button data-dd='${x.id}' class='shrink-0 text-slate-400 hover:text-red-300'>Remove</button></div>`).join(''):`<span class='text-slate-400'>No documents yet. Attach PDF, Word or text files with the paperclip.</span>`}
+async function fFiles(list){for(const f of [...list]){
+ if(f.type.startsWith('image/')){if(f.size>MAXF){toast(f.name+' is over 2.5 MB, skipped');continue}
+  await new Promise(r=>{const fr=new FileReader();fr.onload=()=>{S.files.push({name:f.name,type:f.type,data:fr.result});if(!save())S.files.pop();renderFiles();toast(f.name+' added to your charts');r()};fr.readAsDataURL(f)})}
+ else{if(f.size>15*1024*1024){toast(f.name+' is over 15 MB, skipped');continue}await ingest(f)}}}
+const ASSIST=RULES+'\n'+['ASSISTANT ROLE: You are the in-app multi-agent coach for Lathitha Majavu (PixelMind Web Studio), an active SMC/ICT trader. Internally combine four perspectives: (1) Setup and Structure Analyst (15m HTF, 1m LTF, structure, sweeps, OB, FVG, SMT, POC, Fib), (2) Risk and Execution Auditor (checklist completion, lot sizing, 0.01 base size, 1:2000 margin, SL, breakeven, overtrading), (3) Socratic Coach (one sharp question), (4) Real-Time Evaluator (classify answers; evidence-backed takeaways as claim, evidence, warrant, rebuttal). The trader decides: never place orders or override risk choices; flag rule conflicts and missing gates.',
+'STYLE: Recipient design: the trader knows SMC/ICT, so never define basics unless asked. Be crisp and scannable. Point out errors calmly and constructively. Check understanding when intent is ambiguous. Offer alternatives as light suggestions.',
+'CHART CONVENTIONS to check on screenshots: lines thinner than 2pt; red = supply or bearish OB and FVG; purple = SMT zones; green = bullish FVG and OB; blue = other bullish elements.',
+'DATA: You receive the live app state (page, checklist, calculator, journal entries, notes, confirmation card, BTCUSD context), retrieved excerpts from the trader library documents, and screenshots. Cite library excerpts by file name when used. If something is missing, say exactly what is missing and where to add it; never invent prices, levels or journal records.',
+'REPLY FORMAT (this supersedes the OUTPUT FORMAT above; plain text, no markdown symbols): 1) the direct, context-grounded insight first, a few lines; 2) when reviewing a setup, checklist or trade, briefly cover Setup/Structure, Risk/Checklist discipline and one sharp Coaching question; 3) optionally a line DETAILS: followed by the longer breakdown or evidence trail (shown collapsed); 4) when reviewing a setup, a SUMMARY section with exactly 1) BIAS:, 2) NOT COVERED:, 3) RECOMMENDATIONS:; 5) a final line CHIPS: with 2 to 4 short next actions separated by | (for example Audit checklist | Check HTF vs LTF | Calculate SL/BE rules | Log trade note).'].join('\n');
+const SOC='MODE: SOCRATIC QUIZ. Do not hand over answers. Ask one sharp question at a time about the current setup. When the trader answers, begin your reply with a line STATE: followed by exactly one of CORRECT, PARTIAL_CORRECT, INCORRECT, METACOMMUNICATIVE, METACOGNITIVE, IRRELEVANT, INCOMPLETE, OTHER (classifying their last reply), then give brief feedback and ask the next question.';
+const STD=[['Audit checklist','Audit my pre-trade checklist: which gates are ticked, which are unsupported by my screenshots and notes, and what blocks entry.'],['Check HTF vs LTF','Compare my 15m HTF alignment against the 1m LTF execution trigger. Where do they agree or conflict?'],['Calculate SL/BE rules','Using my balance and instrument, give lot size, stop loss at 78.6% Fib, breakeven trigger and take profit zone, including the 20% balance risk as Rx of Ry.'],['Log trade note',null,'log'],['Next unchecked item',null,'jump'],['Detailed breakdown','Expand your last answer with the full breakdown and evidence trail.'],['Socratic quiz',null,'soc']];
+function fctx(q){CTXLIB=false;const c=ctx();CTXLIB=true;
+ const j=gJ().slice(0,5).map(e=>e.date+' '+e.hour+' '+e.pair+' '+e.bias+' '+e.verdict+': '+String(e.critique||'').slice(0,300).replace(/\n/g,' ')).join('\n')||'(none)';
+ return 'CURRENT PAGE: '+VIEW+'\n'+(socratic?SOC:'MODE: NORMAL')+'\n'+c+'\nLIBRARY DOCUMENTS: '+(gD().map(d=>d.name).join(', ')||'(none)')+'\nRECENT JOURNAL ENTRIES:\n'+j+'\nLIBRARY EXCERPTS:\n'+(kb(q+' '+S.notes,24000)||'(library empty)')}
+function parseReply(t){let chips=[],state='',main=t,det='',sum='';
+ const m=/\n?CHIPS:\s*([^\n]+)\s*$/i.exec(t);if(m){chips=m[1].split('|').map(s=>s.trim()).filter(Boolean).slice(0,5);t=t.slice(0,m.index)}
+ const st=/^\s*STATE:\s*([A-Z_]+)\s*\n?/.exec(t);if(st){state=st[1];t=t.slice(st[0].length)}
+ main=t;const d=/\nDETAILS:\s*/.exec(t);
+ if(d){main=t.slice(0,d.index);const rest=t.slice(d.index+d[0].length),s=/\nSUMMARY/.exec(rest);if(s){det=rest.slice(0,s.index);sum=rest.slice(s.index+1)}else det=rest}
+ else{const s=/\nSUMMARY/.exec(t);if(s){main=t.slice(0,s.index);sum=t.slice(s.index+1)}}
+ return{chips,state,main:main.trim(),det:det.trim(),sum:sum.trim()}}
+function fbubble(role,text){const d=document.createElement('div');d.className='rounded-xl px-3 py-2 text-sm whitespace-pre-wrap '+(role==='user'?'bg-blue-600/20 ml-8':'bg-slate-900/70 mr-6');d.textContent=text;$('fmsgs').appendChild(d);$('fmsgs').scrollTop=1e9;return d}
+function fRender(b,text){const p=parseReply(text);b.className='rounded-xl px-3 py-2 text-sm bg-slate-900/70 mr-6 space-y-2';
+ b.innerHTML=(p.state?`<span class='inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-purple-500/20 text-purple-300'>${esc(p.state)}</span>`:'')+`<div class='whitespace-pre-wrap'>${esc(p.main)}</div>`+(p.det?`<details class='text-xs text-slate-300'><summary class='cursor-pointer text-blue-400'>Show detailed breakdown</summary><div class='whitespace-pre-wrap mt-2'>${esc(p.det)}</div></details>`:'')+(p.sum?`<div class='whitespace-pre-wrap rounded-lg border-l-4 border-blue-400 bg-slate-800/70 p-2 text-xs'>${esc(p.sum)}</div>`:'')+(p.chips.length?`<div class='flex flex-wrap gap-1.5 pt-1' data-cr></div>`:'');
+ const row=b.querySelector('[data-cr]');if(row)p.chips.forEach(c=>{const x=document.createElement('button');x.textContent=c;x.className='text-xs px-2.5 py-1 rounded-full bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-all duration-200';x.onclick=()=>chipGo(c);row.appendChild(x)});
+ b._p=p;$('fmsgs').scrollTop=1e9}
+function saveChat(){try{localStorage.setItem(CK,JSON.stringify(fturns.slice(-20)))}catch(e){}}
+function welcome(){fbubble('ai','Ready. I read your checklist, notes, journal, screenshots and any documents in the library. Use the paperclip to add PDF, Word or text files, or tap a chip below.')}
+function loadChat(){try{fturns=JSON.parse(localStorage.getItem(CK)||'[]')}catch(e){fturns=[]}
+ if(!fturns.length){welcome();return}
+ fturns.forEach(t=>{const b=fbubble(t.role==='user'?'user':'ai',t.content);if(t.role!=='user')fRender(b,t.content)})}
+function lastAI(){const a=[...$('fmsgs').querySelectorAll('div')].filter(x=>x._p);return a.length?a[a.length-1]._p:null}
+function chipGo(label){const s=STD.find(x=>x[0].toLowerCase()===String(label).toLowerCase());
+ if(!s){fSend(label);return}
+ if(s[1]){fSend(s[1]);return}
+ if(s[2]==='log'){const p=lastAI();if(!p){toast('Nothing to log yet');return}const d=new Date().toLocaleString('en-ZA',{timeZone:'Africa/Johannesburg'});S.notes=(S.notes?S.notes+'\n\n':'')+'[AI note '+d+'] '+(p.sum||p.main).slice(0,500);save();$('notes').value=S.notes;toast('Added to your setup notes')}
+ else if(s[2]==='jump'){const n=ITEMS.find(i=>!S.checked[i.id]);if(!n){toast('All 13 items are ticked');return}$('fpanel').classList.add('hidden');renderView('dash');S.tab=n.cat;save();renderTabs();renderItems();setTimeout(()=>{const el=document.querySelector(`[data-id='${n.id}']`);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('ring-2','ring-blue-500');setTimeout(()=>el.classList.remove('ring-2','ring-blue-500'),2200)}},60)}
+ else if(s[2]==='soc'){socratic=!socratic;$('fmode').classList.toggle('hidden',!socratic);toast(socratic?'Socratic quiz on':'Socratic quiz off');if(socratic)fSend('Start the Socratic quiz on my current setup. Ask the first question.')}}
+async function fSend(q){q=String(q).trim();if(fbusy||!q)return;
+ if(!SAMPLE){fbubble('ai','The assistant runs from the claude.ai link of this page. Library uploads still work here.');return}
+ fbusy=true;$('fq').value='';$('fsend').classList.add('hidden');$('fstop').classList.remove('hidden');
+ fbubble('user',q);const b=fbubble('ai','Thinking...');fturns.push({role:'user',content:q});fctl=new AbortController();
+ const opts={cache:false,signal:fctl.signal,onText:({text})=>{b.textContent=text;$('fmsgs').scrollTop=1e9}};
+ try{const im=LIM&&LIM.images;if(im&&$('fincl').checked){const ok=im.mediaTypes||[],bl=ctxFiles(q).filter(f=>f.type.startsWith('image/')&&f.data.startsWith('data:')&&(!ok.length||ok.includes(f.type))).slice(0,im.maxCount||4).map(f=>dataToBlob(f.data));if(bl.length)opts.images=bl}
+  const r=await SAMPLE([{role:'user',content:ASSIST+'\n\nAPP STATE:\n'+fctx(q)},...fturns.slice(-11)],opts);
+  fturns.push({role:'assistant',content:r.text});saveChat();fRender(b,r.text)}
+ catch(e){fturns.pop();if(e.code==='cancelled')b.textContent=(e.text||'')+'\n(stopped)';else b.textContent=(e.text?e.text+'\n':'')+(ERR[e.code]||ERR.upstream_error)}
+ finally{fbusy=false;$('fsend').classList.remove('hidden');$('fstop').classList.add('hidden')}}
+function initFloat(){
+ renderLib();loadChat();
+ $('fchips').innerHTML=STD.map(s=>`<button class='shrink-0 text-xs px-2.5 py-1 rounded-full bg-slate-700/60 hover:bg-slate-700 whitespace-nowrap transition-all duration-200'>${s[0]}</button>`).join('');
+ [...$('fchips').children].forEach((x,i)=>x.onclick=()=>chipGo(STD[i][0]));
+ const op=v=>{$('fpanel').classList.toggle('hidden',!v);if(v){$('fq').focus();$('fmsgs').scrollTop=1e9}};
+ $('fab').onclick=()=>op($('fpanel').classList.contains('hidden'));
+ $('fclose').onclick=()=>op(false);
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')op(false)});
+ $('flibbtn').onclick=()=>$('flib').classList.toggle('hidden');
+ $('flib').onclick=e=>{const b=e.target.closest('[data-dd]');if(!b)return;sD(gD().filter(x=>x.id!==b.dataset.dd));renderLib()};
+ $('fnew').onclick=()=>{fturns=[];saveChat();$('fmsgs').innerHTML='';welcome()};
+ $('fattach').onclick=()=>$('ffile').click();
+ $('ffile').onchange=e=>{fFiles(e.target.files);e.target.value=''};
+ const p=$('fpanel');
+ ['dragenter','dragover'].forEach(v=>p.addEventListener(v,e=>{e.preventDefault();p.classList.add('ring-2','ring-blue-500')}));
+ ['dragleave','drop'].forEach(v=>p.addEventListener(v,e=>{e.preventDefault();p.classList.remove('ring-2','ring-blue-500')}));
+ p.addEventListener('drop',e=>fFiles(e.dataTransfer.files));
+ $('fsend').onclick=()=>fSend($('fq').value);$('fq').onkeydown=e=>{if(e.key==='Enter')fSend($('fq').value)};
+ $('fstop').onclick=()=>fctl&&fctl.abort()}
+init();
+initTools();
+initCrypto();
+initFloat();
+initCoach();
+</script>
+</body>
+</html>
